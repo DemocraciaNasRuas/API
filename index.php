@@ -122,7 +122,7 @@ $router->post('/protest', function () use ($mapper)
 
     // Validar os dados de organizador
     $validationOrganizer = v::arr()                                         // verifica se é um array                
-                         ->key('title', $rule = v::string()->notEmpty())    // verifica se a key 'title' está vazia   
+                         ->key('title', $rule)    // verifica se a key 'title' está vazia   
                          ->key('description', $rule)                        // verifica se a key 'description' está vazia 
                          ->validate($_POST['organizer_protest']);
 
@@ -169,7 +169,7 @@ $router->post('/protest', function () use ($mapper)
     //redireciona para a nova cerveja
     header('HTTP/1.1 201 Created');
     
-    return 'Cerveja criada'; 
+    return 'Protesto criado com sucesso!'; 
 });
 
 $router->put('/protest/*', function ($nome) use ($mapper) 
