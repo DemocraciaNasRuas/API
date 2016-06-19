@@ -17,8 +17,10 @@ $config = new Container('config.ini');
  * Criar instância PDO com o SQLite usando as configs
  */
 // diretório precisa ter permissão de escrita também
-$mapper = new Mapper(new PDO($config->dsn));
 
+// $mapper = new Mapper(new PDO($config->dsn));
+
+$mapper = new Mapper(new PDO( "mysql:host=localhost;dbname=democratic_streets", "root", "" ) );
 
 // Criar instância do router
 $router = new Router();
@@ -53,7 +55,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
     // Validar com negação se string esta preenchida
     if ( !isset($data) ) 
     {
-        $protests = $mapper->cervejas->fetchAll();
+        $protests = $mapper->protests->fetchAll();
 
         header('HTTP/1.1 200 Ok');
         
@@ -98,28 +100,33 @@ $router->get('/protests/*', function ($data) use ($mapper)
 
 $router->post('/protest', function () use ($mapper) 
 {
-    //pega os dados via $_POST
+    $_POST = json_decode(file_get_contents('php://input'), 1);
 
-    if ( !isset($_POST) || !isset($_POST['organizer']) || v::not(v::arr())->validate($_POST['organizer']) || !isset($_POST['protest']) || v::not(v::arr())->validate($_POST['protest']) ) 
+    //pega os dados via $_POST
+    if ( !isset($_POST) || !isset($_POST['organizer_protest']) || v::not(v::arr())->validate($_POST['organizer_protest']) || !isset($_POST['protest']) || v::not(v::arr())->validate($_POST['protest']) ) 
     {
         header('HTTP/1.1 400 Bad Request');
     
         return 'Faltam parâmetros'; 
     }
 
-    // Validar o input
-    $validation = v::arr()                                                        // validar se é array                  
-                 ->key('nome',   $rule = v::alnum()->notEmpty()->noWhitespace())  // validar a key 'nome' se não está vazia   
-                 ->key('estilo', $rule)                                           // utilizando a mesma regra da key de cima      
-                 ->validate($_POST['organizer']);
+    // Validar os dados de protesto
+    $validationProtest = v::arr()                                           // verifica se é um array                
+                         ->key('title', $rule = v::string()->notEmpty())    // verifica se a key 'title' está vazia   
+                         ->key('description', $rule)                        // verifica se a key 'description' está vazia 
+                         ->key('date', $rule)                               // verifica se a key 'date' está vazia 
+                         ->key('state', $rule)                              // verifica se a key 'state' está vazia 
+                         ->key('city', $rule)                               // verifica se a key 'city' está vazia 
+                         ->key('url', $rule)                                // verifica se a key 'url' está vazia 
+                         ->validate($_POST['protest']);
 
-    // Validar o input
-    $validation = v::arr()                                                        // validar se é array                  
-                 ->key('nome',   $rule = v::alnum()->notEmpty()->noWhitespace())  // validar a key 'nome' se não está vazia   
-                 ->key('estilo', $rule)                                           // utilizando a mesma regra da key de cima      
-                 ->validate($_POST['protest']);
+    // Validar os dados de organizador
+    $validationOrganizer = v::arr()                                         // verifica se é um array                
+                         ->key('title', $rule = v::string()->notEmpty())    // verifica se a key 'title' está vazia   
+                         ->key('description', $rule)                        // verifica se a key 'description' está vazia 
+                         ->validate($_POST['organizer_protest']);
 
-    if ( !$validation ) 
+    if ( !$validationProtest || !$validationOrganizer ) 
     {
         header('HTTP/1.1 400 Bad Request');
     
@@ -127,32 +134,38 @@ $router->post('/protest', function () use ($mapper)
     }
 
     // tratar os dados
-    $cerveja         = new stdClass();
-    $cerveja->nome   = filter_var($_POST['cerveja']['nome'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $cerveja->estilo = filter_var($_POST['cerveja']['estilo'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest         = new stdClass();
+    $protest->title   = filter_var($_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->description = filter_var($_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->date = $_POST['protest']['date'];
+    $protest->state = filter_var($_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->city = filter_var($_POST['protest']['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->url = filter_var($_POST['protest']['url'], FILTER_SANITIZE_URL);
+    $protest->image = $_POST['protest']['image'];
 
-    // buscar cerveja pelo nome para ver se já tem
-    // $check = $mapper->cervejas(array( 'nome' => $cerveja->nome ))->fetch();
-    
-    // if ( $check ) 
-    // {
-    //     header('HTTP/1.1 409 Conflict');
-    
-    //     return 'Cerveja já existe no sistema'; 
-    // }
-
-    // gravar nova cerveja
-    $mapper->cervejas->persist($cerveja);
+    // gravar novo protesto
+    $mapper->protests->persist($protest);
     $mapper->flush();
 
-    // verificar se gravou
-    if ( !isset($cerveja->id) || empty($cerveja->id) ) 
+    if ( isset($protest->id) || !empty($protest->id) ) 
     {
-        header('HTTP/1.1 500 Internal Server Error');
-    
-        return 'Erro ao inserir cerveja';
+        // tratar os dados
+        $organizer         = new stdClass();
+        $organizer->title   = filter_var($_POST['organizer_protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $organizer->description = filter_var($_POST['organizer_protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $organizer->protest_id = $protest->id;
+        $organizer->facebook = filter_var($_POST['organizer_protest']['facebook'], FILTER_SANITIZE_URL);
+        $organizer->twitter = filter_var($_POST['organizer_protest']['twitter'], FILTER_SANITIZE_URL);
+        $organizer->site = filter_var($_POST['organizer_protest']['site'], FILTER_SANITIZE_URL);
+        $organizer->email = filter_var($_POST['organizer_protest']['email'], FILTER_SANITIZE_EMAIL);
+        $organizer->phone1 = filter_var($_POST['organizer_protest']['phone1'], FILTER_SANITIZE_EMAIL);
+        $organizer->phone2 = filter_var($_POST['organizer_protest']['phone2'], FILTER_SANITIZE_EMAIL);
+        
+        // gravar nova organização
+        $mapper->organizer_protest->persist($organizer);
+        $mapper->flush();
     }
-    
+
     //redireciona para a nova cerveja
     header('HTTP/1.1 201 Created');
     
