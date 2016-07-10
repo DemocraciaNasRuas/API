@@ -100,7 +100,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
 
 $router->post('/protest', function () use ($mapper) 
 {
-    $_POST = json_decode(file_get_contents('php://input'), 1);
+    $_POST = json_decode( file_get_contents('php://input'), 1 );
 
     //pega os dados via $_POST
     if ( !isset($_POST) || !isset($_POST['organizer_protest']) || v::not(v::arr())->validate($_POST['organizer_protest']) || !isset($_POST['protest']) || v::not(v::arr())->validate($_POST['protest']) ) 
@@ -116,13 +116,15 @@ $router->post('/protest', function () use ($mapper)
                          ->key('description', $rule)                        // verifica se a key 'description' está vazia 
                          ->key('date', $rule)                               // verifica se a key 'date' está vazia 
                          ->key('state', $rule)                              // verifica se a key 'state' está vazia 
+                         ->key('street', $rule)                             // verifica se a key 'street' está vazia 
+                         ->key('postal_code', $rule)                        // verifica se a key 'postal_code' está vazia 
                          ->key('city', $rule)                               // verifica se a key 'city' está vazia 
                          ->key('url', $rule)                                // verifica se a key 'url' está vazia 
                          ->validate($_POST['protest']);
 
     // Validar os dados de organizador
     $validationOrganizer = v::arr()                                         // verifica se é um array                
-                         ->key('title', $rule)    // verifica se a key 'title' está vazia   
+                         ->key('title', $rule)                              // verifica se a key 'title' está vazia   
                          ->key('description', $rule)                        // verifica se a key 'description' está vazia 
                          ->validate($_POST['organizer_protest']);
 
@@ -138,10 +140,18 @@ $router->post('/protest', function () use ($mapper)
     $protest->title   = filter_var($_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protest->description = filter_var($_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protest->date = $_POST['protest']['date'];
-    $protest->state = filter_var($_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->street = filter_var($_POST['protest']['street'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->number = filter_var($_POST['protest']['number'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->neighborhood = filter_var($_POST['protest']['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->postal_code = filter_var($_POST['protest']['postal_code'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->complement = filter_var($_POST['protest']['complement'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->reference = filter_var($_POST['protest']['reference'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protest->city = filter_var($_POST['protest']['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protest->state = filter_var($_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protest->url = filter_var($_POST['protest']['url'], FILTER_SANITIZE_URL);
     $protest->image = $_POST['protest']['image'];
+    $protest->created_at = date("Y-m-d H:i:s");
+    $protest->updated_at = date("Y-m-d H:i:s");
 
     // gravar novo protesto
     $mapper->protests->persist($protest);
@@ -160,120 +170,155 @@ $router->post('/protest', function () use ($mapper)
         $organizer->email = filter_var($_POST['organizer_protest']['email'], FILTER_SANITIZE_EMAIL);
         $organizer->phone1 = filter_var($_POST['organizer_protest']['phone1'], FILTER_SANITIZE_EMAIL);
         $organizer->phone2 = filter_var($_POST['organizer_protest']['phone2'], FILTER_SANITIZE_EMAIL);
+        $organizer->created_at = date("Y-m-d H:i:s");
+        $organizer->updated_at = date("Y-m-d H:i:s");
         
         // gravar nova organização
         $mapper->organizer_protest->persist($organizer);
         $mapper->flush();
     }
 
-    //redireciona para a nova cerveja
+    //redireciona para a novo protesto
     header('HTTP/1.1 201 Created');
     
     return 'Protesto criado com sucesso!'; 
 });
 
-$router->put('/protest/*', function ($nome) use ($mapper) 
+$router->put('/protest/*', function ( $id ) use ( $mapper ) 
 {
     //pega os dados
-    parse_str(file_get_contents('php://input'), $data);
+    $_POST = json_decode( file_get_contents('php://input'), 1 );
 
-    if ( !isset($_POST) || !isset($_POST['organizer']) || v::not(v::arr())->validate($_POST['organizer']) || !isset($_POST['protest']) || v::not(v::arr())->validate($_POST['protest']) ) 
+    if ( !isset( $_POST ) || !isset( $_POST['organizer_protest'] ) || v::not(v::arr())->validate( $_POST['organizer_protest'] ) || !isset( $_POST['protest'] ) || v::not( v::arr() )->validate( $_POST['protest'] ) ) 
+    {
+        header( 'HTTP/1.1 400 Bad Request' );
+    
+        return 'Faltam parâmetros'; 
+    }
+
+    // Validar os dados de protesto
+    $validationProtest = v::arr()                                           // verifica se é um array                
+                         ->key('title', $rule = v::string()->notEmpty())    // verifica se a key 'title' está vazia   
+                         ->key('description', $rule)                        // verifica se a key 'description' está vazia 
+                         ->key('date', $rule)                               // verifica se a key 'date' está vazia 
+                         ->key('state', $rule)                              // verifica se a key 'state' está vazia 
+                         ->key('street', $rule)                             // verifica se a key 'street' está vazia 
+                         ->key('postal_code', $rule)                        // verifica se a key 'postal_code' está vazia 
+                         ->key('city', $rule)                               // verifica se a key 'city' está vazia 
+                         ->key('url', $rule)                                // verifica se a key 'url' está vazia 
+                         ->validate( $_POST['protest'] );
+
+    // Validar os dados de organizador
+    $validationOrganizer = v::arr()                                         // verifica se é um array                
+                         ->key('title', $rule)                              // verifica se a key 'title' está vazia   
+                         ->key('description', $rule)                        // verifica se a key 'description' está vazia 
+                         ->validate( $_POST['organizer_protest'] );
+
+    if ( !$validationProtest || !$validationOrganizer ) 
     {
         header('HTTP/1.1 400 Bad Request');
     
         return 'Faltam parâmetros'; 
     }
 
-    // Validar o input
-    $validation = v::arr()                                                        // validar se é array                  
-                 ->key('nome',   $rule = v::alnum()->notEmpty()->noWhitespace())  // validar a key 'nome' se não está vazia   
-                 ->key('estilo', $rule)                                           // utilizando a mesma regra da key de cima      
-                 ->validate($data['organizer']);
-
-    // Validar o input
-    $validation = v::arr()                                                        // validar se é array                  
-                 ->key('nome',   $rule = v::alnum()->notEmpty()->noWhitespace())  // validar a key 'nome' se não está vazia   
-                 ->key('estilo', $rule)                                           // utilizando a mesma regra da key de cima      
-                 ->validate($data['protest']);
-
-    if ( !$validation ) 
-    {
-        header('HTTP/1.1 400 Bad Request');
+    //buscar protesto por id 
+    $protests = $mapper->protests[$id]->fetch();
     
-        return 'Faltam parâmetros'; 
-    }
-
-    // tratar os dados
-    $nome = filter_var( $nome, FILTER_SANITIZE_FULL_SPECIAL_CHARS );
-
-    // validar conteúdo
-    if ( v::not(v::alnum()->notEmpty())->validate($nome) ) 
+    if ( !$protests ) 
     {
         header('HTTP/1.1 404 Not Found');
     
-        return 'Não encontrada';
-    }
-
-    // buscar cerveja pelo nome
-    $cerveja = $mapper->cervejas(array( 'nome' => $nome ))->fetch();
-
-    // BONUS - podemos buscar por id também 
-    // $cerveja = $mapper->cervejas[$id]->fetch();
-
-    if ( !$cerveja ) 
-    {
-        header('HTTP/1.1 404 Not Found');
-    
-        return 'Não encontrada'; 
+        return 'Protesto não encontrado!'; 
     }
 
     // tratar os dados
-    $newNome   = filter_var( $data['cerveja']['nome'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS );
-    $newEstilo = filter_var( $data['cerveja']['estilo'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protests->title   = filter_var($_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->description = filter_var($_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->date = $_POST['protest']['date'];
+    $protests->street = filter_var($_POST['protest']['street'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->number = filter_var($_POST['protest']['number'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->neighborhood = filter_var($_POST['protest']['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->postal_code = filter_var($_POST['protest']['postal_code'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->complement = filter_var($_POST['protest']['complement'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->reference = filter_var($_POST['protest']['reference'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->city = filter_var($_POST['protest']['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->state = filter_var($_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $protests->url = filter_var($_POST['protest']['url'], FILTER_SANITIZE_URL);
+    $protests->image = $_POST['protest']['image'];
+    $protests->updated_at = date("Y-m-d H:i:s");
 
-    //Persiste na base de dados ($mapper retorna objeto preenchido full)
-    $cerveja->nome   = $newNome;
-    $cerveja->estilo = $newEstilo;
-    $mapper->cervejas->persist($cerveja);
-    $mapper->flush();
+    $mapper->protests->persist($protests);
+
+    if ( isset($protests->id) || !empty($protests->id) ) 
+    {
+        //buscar organizador do protesto por id 
+        $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protests->id ) )->fetch();
+        
+        if ( !$organizer_protest ) 
+        {
+            header('HTTP/1.1 404 Not Found');
+        
+            return 'Organizador do protesto não encontrado!'; 
+        }
+
+        // tratar os dados
+        $organizer_protest->title = filter_var($_POST['organizer_protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $organizer_protest->description = filter_var($_POST['organizer_protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $organizer_protest->protest_id = $protests->id;
+        $organizer_protest->facebook = filter_var($_POST['organizer_protest']['facebook'], FILTER_SANITIZE_URL);
+        $organizer_protest->twitter = filter_var($_POST['organizer_protest']['twitter'], FILTER_SANITIZE_URL);
+        $organizer_protest->site = filter_var($_POST['organizer_protest']['site'], FILTER_SANITIZE_URL);
+        $organizer_protest->email = filter_var($_POST['organizer_protest']['email'], FILTER_SANITIZE_EMAIL);
+        $organizer_protest->phone1 = filter_var($_POST['organizer_protest']['phone1'], FILTER_SANITIZE_EMAIL);
+        $organizer_protest->phone2 = filter_var($_POST['organizer_protest']['phone2'], FILTER_SANITIZE_EMAIL);
+        $organizer_protest->updated_at = date("Y-m-d H:i:s");
+
+        $mapper->organizer_protest->persist($organizer_protest);
+        
+        $mapper->flush();
+    }
 
     header('HTTP/1.1 200 Ok');
     
-    return 'Protesto atualizada';
+    return 'Protesto atualizado!';
 });
 
-$router->delete('/protest/*', function ($nome) use ($mapper) 
+$router->delete('/protest/*', function ($id) use ($mapper) 
 {
-    // tratar os dados
-    $nome = filter_var( $nome, FILTER_SANITIZE_FULL_SPECIAL_CHARS );
-
     // Validar com negação se string esta preenchida
-    if ( !isset($nome) || v::not(v::alnum()->notEmpty())->validate($nome) ) 
+    if ( !isset($id) || !v::alnum()->notEmpty()->validate($id) ) 
     {
         header('HTTP/1.1 400 Bad Request');
     
         return 'Faltam parâmetros'; 
     }
 
-    // verificar se existe a cerveja pelo nome
-    $cerveja = $mapper->cervejas(array( 'nome' => $nome ))->fetch();
-
-    // BONUS - podemos buscar por id também 
-    // $cerveja = $mapper->cervejas[$id]->fetch();
+    //buscar protesto por id 
+    $protests = $mapper->protests[$id]->fetch();
     
-    if ( !$cerveja ) 
+    if ( !$protests ) 
     {
         header('HTTP/1.1 404 Not Found');
     
-        return 'Não encontrada'; 
+        return 'Protesto não encontrado!'; 
     }
 
-    $mapper->cervejas->remove($cerveja);
+    $protests->status = 0;
+
+    //buscar organizador do protesto por id 
+    $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protests->id ) )->fetch();
+
+    if( $organizer_protest )
+        $organizer_protest->status = 0;
+
+    $mapper->protests->persist($protests);
+    $mapper->organizer_protest->persist($organizer_protest);
+
     $mapper->flush();
     
     header('HTTP/1.1 200 Ok');
     
-    return 'Cerveja removida';
+    return 'Protesto removido';
 });
 
 $jsonRender = function ($data) 
