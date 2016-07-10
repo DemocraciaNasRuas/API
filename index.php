@@ -49,7 +49,6 @@ $router->any('/', function ()
 //     return checkLogin($user, $pass);
 // });
 
-// Rota para listar informações de uma cerveja ou todas
 $router->get('/protests/*', function ($data) use ($mapper) 
 {
     // Validar com negação se string esta preenchida
@@ -77,12 +76,12 @@ $router->get('/protests/*', function ($data) use ($mapper)
     if ( v::int()->validate( $data ) ) 
     {
         // buscar protesto por id
-        $protesto = $mapper->cervejas[$data]->fetch();
+        $protesto = $mapper->protests[$data]->fetch();
     } 
     else 
     {
         // buscar protesto pelo nome
-        $protesto = $mapper->cervejas(array( 'nome' => $data ))->fetch();
+        $protesto = $mapper->protests(array( 'nome' => $data ))->fetch();
     }
 
     if ( !$protesto ) 
