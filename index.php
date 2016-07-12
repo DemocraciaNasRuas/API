@@ -51,38 +51,41 @@ $router->any('/', function ()
 
 $router->get('/protests/*', function ($data) use ($mapper) 
 {
+    $data = $_GET;
     // Validar com negação se string esta preenchida
-    if ( !isset($data) ) 
+    if ( !isset($data) || count( $data ) == 0 ) 
     {
         $protests = $mapper->protests->fetchAll();
+        
+        foreach ( $protests as $protest ) 
+        {
+            $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protest->id ) )->fetch();
+
+            $protest_organizer = array( 'protests' => $protest, 'organizer' => $organizer_protest );
+
+            $return[] = $protest_organizer;
+        }
 
         header('HTTP/1.1 200 Ok');
-        
-        return $protests;
+        return json_encode( $return );
     }
+
+    $params_search = array();
 
     // tratar os dados
-    $data = filter_var( $data, FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protests_search = new stdClass();
+    $protests_search->keywords = isset( $data['keywords'] ) ? filter_var( $data['keywords'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
+    $protests_search->city = isset( $data['city'] ) ? filter_var( $data['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
+    $protests_search->state = isset( $data['state'] ) ? filter_var( $data['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
+    $protests_search->date = isset( $data['date'] ) ? date('Y-m-d H:i:s', strtotime( $data['date'] ) ) : '';
 
-    // validar conteúdo
-    if ( v::not(v::alnum()->notEmpty())->validate($data) ) 
-    {
-        header('HTTP/1.1 404 Not Found');
-    
-        return 'Não encontrado';
-    }
+    if( $protests_search->city ) $params_search['city'] = $protests_search->city;
+    if( $protests_search->state ) $params_search['state'] = $protests_search->state;
+    if( $protests_search->date ) $params_search['date >='] = date('Y-m-d H:i:s', strtotime($protests_search->date));
 
-    // buscar protesto por id
-    if ( v::int()->validate( $data ) ) 
-    {
-        // buscar protesto por id
-        $protesto = $mapper->protests[$data]->fetch();
-    } 
-    else 
-    {
-        // buscar protesto pelo nome
-        $protesto = $mapper->protests(array( 'nome' => $data ))->fetch();
-    }
+    $test = $mapper->protests( $params_search )->fetchAll();
+
+    return array($test);
 
     if ( !$protesto ) 
     {
@@ -91,9 +94,6 @@ $router->get('/protests/*', function ($data) use ($mapper)
         return 'Não encontrado'; 
     }
 
-    header('HTTP/1.1 200 Ok');
-    
-    return $protesto;
 });
 
 
@@ -136,21 +136,21 @@ $router->post('/protest', function () use ($mapper)
 
     // tratar os dados
     $protest         = new stdClass();
-    $protest->title   = filter_var($_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->description = filter_var($_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->date = $_POST['protest']['date'];
-    $protest->street = filter_var($_POST['protest']['street'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->number = filter_var($_POST['protest']['number'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->neighborhood = filter_var($_POST['protest']['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->postal_code = filter_var($_POST['protest']['postal_code'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->complement = filter_var($_POST['protest']['complement'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->reference = filter_var($_POST['protest']['reference'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->city = filter_var($_POST['protest']['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->state = filter_var($_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protest->url = filter_var($_POST['protest']['url'], FILTER_SANITIZE_URL);
+    $protest->title   = filter_var( $_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->description = filter_var( $_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->date = date('Y-m-d H:i:s', strtotime( $_POST['protest']['date'] ) );
+    $protest->street = filter_var( $_POST['protest']['street'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->number = filter_var( $_POST['protest']['number'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->neighborhood = filter_var( $_POST['protest']['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->postal_code = filter_var( $_POST['protest']['postal_code'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->complement = filter_var( $_POST['protest']['complement'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->reference = filter_var( $_POST['protest']['reference'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->city = filter_var( $_POST['protest']['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->state = filter_var( $_POST['protest']['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+    $protest->url = filter_var( $_POST['protest']['url'], FILTER_SANITIZE_URL );
     $protest->image = $_POST['protest']['image'];
-    $protest->created_at = date("Y-m-d H:i:s");
-    $protest->updated_at = date("Y-m-d H:i:s");
+    $protest->created_at = date( "Y-m-d H:i:s" );
+    $protest->updated_at = date( "Y-m-d H:i:s" );
 
     // gravar novo protesto
     $mapper->protests->persist($protest);
@@ -233,7 +233,7 @@ $router->put('/protest/*', function ( $id ) use ( $mapper )
     // tratar os dados
     $protests->title   = filter_var($_POST['protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protests->description = filter_var($_POST['protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $protests->date = $_POST['protest']['date'];
+    $protests->date =  date('Y-m-d H:i:s', strtotime( $_POST['protest']['date'] ) );
     $protests->street = filter_var($_POST['protest']['street'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protests->number = filter_var($_POST['protest']['number'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $protests->neighborhood = filter_var($_POST['protest']['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
