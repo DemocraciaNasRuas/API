@@ -32,34 +32,19 @@ $router->any('/', function ()
 {
     return 'Democracia nas ruas!';
 });
- 
-/** 
- * Rota com autenticação básica
- */
-
-// // do not use this!
-// function checkLogin($user, $pass) 
-// {
-//     return $user === 'admin' && $pass === 'admin';
-// }
-
-// $router->get('/admin', function () {
-//     return 'RestBeer Admin Protected!';
-// })->authBasic('Secret Area', function ($user, $pass) {
-//     return checkLogin($user, $pass);
-// });
 
 $router->get('/protests/*', function ($data) use ($mapper) 
 {
     $data = $_GET;
+
     // Validar com negação se string esta preenchida
-    if ( !isset($data) || count( $data ) == 0 ) 
+    if ( !isset( $data ) || count( $data ) == 0 ) 
     {
         $protests = $mapper->protests->fetchAll();
         
         foreach ( $protests as $protest ) 
         {
-            $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protest->id ) )->fetch();
+            $organizer_protest = $mapper->organizer_protest( array( 'protests_id' => $protest->id ) )->fetch();
 
             $protest_organizer = array( 'protests' => $protest, 'organizer' => $organizer_protest );
 
@@ -77,15 +62,15 @@ $router->get('/protests/*', function ($data) use ($mapper)
     $protests_search->keywords = isset( $data['keywords'] ) ? filter_var( $data['keywords'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->city = isset( $data['city'] ) ? filter_var( $data['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->state = isset( $data['state'] ) ? filter_var( $data['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
+    $protests_search->neighborhood = isset( $data['neighborhood'] ) ? filter_var( $data['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->date = isset( $data['date'] ) ? date('Y-m-d H:i:s', strtotime( $data['date'] ) ) : '';
 
     if( $protests_search->city ) $params_search['city'] = $protests_search->city;
     if( $protests_search->state ) $params_search['state'] = $protests_search->state;
     if( $protests_search->date ) $params_search['date >='] = date('Y-m-d H:i:s', strtotime($protests_search->date));
+    if( $protests_search->neighborhood ) $params_search['neighborhood LIKE'] = "%" . $protests_search->neighborhood . "%";
 
-    $test = $mapper->protests( $params_search )->fetchAll();
-
-    return array($test);
+    $protesto = $mapper->organizer_protest->protests( $params_search )->fetchAll();
 
     if ( !$protesto ) 
     {
@@ -93,6 +78,8 @@ $router->get('/protests/*', function ($data) use ($mapper)
     
         return 'Não encontrado'; 
     }
+
+    return $protesto;
 
 });
 
@@ -162,7 +149,7 @@ $router->post('/protest', function () use ($mapper)
         $organizer         = new stdClass();
         $organizer->title   = filter_var($_POST['organizer_protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $organizer->description = filter_var($_POST['organizer_protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $organizer->protest_id = $protest->id;
+        $organizer->protests_id = $protest->id;
         $organizer->facebook = filter_var($_POST['organizer_protest']['facebook'], FILTER_SANITIZE_URL);
         $organizer->twitter = filter_var($_POST['organizer_protest']['twitter'], FILTER_SANITIZE_URL);
         $organizer->site = filter_var($_POST['organizer_protest']['site'], FILTER_SANITIZE_URL);
@@ -251,7 +238,7 @@ $router->put('/protest/*', function ( $id ) use ( $mapper )
     if ( isset($protests->id) || !empty($protests->id) ) 
     {
         //buscar organizador do protesto por id 
-        $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protests->id ) )->fetch();
+        $organizer_protest = $mapper->organizer_protest( array( 'protests_id' => $protests->id ) )->fetch();
         
         if ( !$organizer_protest ) 
         {
@@ -263,7 +250,7 @@ $router->put('/protest/*', function ( $id ) use ( $mapper )
         // tratar os dados
         $organizer_protest->title = filter_var($_POST['organizer_protest']['title'],   FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $organizer_protest->description = filter_var($_POST['organizer_protest']['description'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $organizer_protest->protest_id = $protests->id;
+        $organizer_protest->protests_id = $protests->id;
         $organizer_protest->facebook = filter_var($_POST['organizer_protest']['facebook'], FILTER_SANITIZE_URL);
         $organizer_protest->twitter = filter_var($_POST['organizer_protest']['twitter'], FILTER_SANITIZE_URL);
         $organizer_protest->site = filter_var($_POST['organizer_protest']['site'], FILTER_SANITIZE_URL);
@@ -305,7 +292,7 @@ $router->delete('/protest/*', function ($id) use ($mapper)
     $protests->status = 0;
 
     //buscar organizador do protesto por id 
-    $organizer_protest = $mapper->organizer_protest( array( 'protest_id' => $protests->id ) )->fetch();
+    $organizer_protest = $mapper->organizer_protest( array( 'protests_id' => $protests->id ) )->fetch();
 
     if( $organizer_protest )
         $organizer_protest->status = 0;
