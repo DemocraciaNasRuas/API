@@ -7,6 +7,7 @@ use Respect\Config\Container;
 use Respect\Validation\Validator as v;
 use Respect\Relational\Mapper;
 use Respect\Data\Collections\Collection;
+use Respect\Relational\Sql;
 
 /** 
  * Ler arquivo de configuração
@@ -59,18 +60,19 @@ $router->get('/protests/*', function ($data) use ($mapper)
 
     // tratar os dados
     $protests_search = new stdClass();
-    $protests_search->keywords = isset( $data['keywords'] ) ? filter_var( $data['keywords'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
+    // $protests_search->keywords = isset( $data['keywords'] ) ? filter_var( $data['keywords'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->city = isset( $data['city'] ) ? filter_var( $data['city'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->state = isset( $data['state'] ) ? filter_var( $data['state'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->neighborhood = isset( $data['neighborhood'] ) ? filter_var( $data['neighborhood'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ) : '';
     $protests_search->date = isset( $data['date'] ) ? date('Y-m-d H:i:s', strtotime( $data['date'] ) ) : '';
+    $protests_search->keywords = isset( $data['keywords'] ) ? explode(' ', $data['keywords']) : '';
 
     if( $protests_search->city ) $params_search['city'] = $protests_search->city;
     if( $protests_search->state ) $params_search['state'] = $protests_search->state;
     if( $protests_search->date ) $params_search['date >='] = date('Y-m-d H:i:s', strtotime($protests_search->date));
     if( $protests_search->neighborhood ) $params_search['neighborhood LIKE'] = "%" . $protests_search->neighborhood . "%";
 
-    $protesto = $mapper->organizer_protest->protests( $params_search )->fetchAll();
+    $protesto = $mapper->organizer_protest->protests( $params_search )->fetchAll( Sql::orderBy('protests.date')->asc() );
 
     if ( !$protesto ) 
     {
@@ -105,14 +107,14 @@ $router->post('/protest', function () use ($mapper)
                          ->key('street', $rule)                             // verifica se a key 'street' está vazia 
                          ->key('postal_code', $rule)                        // verifica se a key 'postal_code' está vazia 
                          ->key('city', $rule)                               // verifica se a key 'city' está vazia 
-                         ->key('url', $rule)                                // verifica se a key 'url' está vazia 
-                         ->validate($_POST['protest']);
+                         // ->key('url', $rule)                                // verifica se a key 'url' está vazia 
+                         ->validate( $_POST['protest'] );
 
     // Validar os dados de organizador
     $validationOrganizer = v::arr()                                         // verifica se é um array                
                          ->key('title', $rule)                              // verifica se a key 'title' está vazia   
                          ->key('description', $rule)                        // verifica se a key 'description' está vazia 
-                         ->validate($_POST['organizer_protest']);
+                         ->validate( $_POST['organizer_protest'] );
 
     if ( !$validationProtest || !$validationOrganizer ) 
     {
