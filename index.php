@@ -21,7 +21,7 @@ $config = new Container('config.ini');
 
 // $mapper = new Mapper(new PDO($config->dsn));
 
-$mapper = new Mapper(new PDO( "mysql:host=localhost;dbname=democratic_streets", "root", "democracia" ) );
+$mapper = new Mapper(new PDO( "mysql:host=localhost;dbname=democratic_streets", "democracia", "2xeX|mLA" ) );
 // $mapper = new Mapper(new PDO( "mysql:host=localhost;dbname=democratic_streets", "root", "" ) );
 
 // Criar instância do router
