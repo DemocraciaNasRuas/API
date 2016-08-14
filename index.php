@@ -82,7 +82,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
         return 'Não encontrado'; 
     }
 
-    return json_encode($protesto);
+    return json_decode($protesto);
 
 });
 
