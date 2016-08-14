@@ -34,6 +34,25 @@ $router->any('/', function ()
     return 'Democracia nas ruas!';
 });
 
+$router->get('/citys/*', function ($data) use ($mapper) {
+
+    $data = $_GET;
+
+    $states = $mapper->state( array( 'uf' => $data['state'] ) )->fetchAll();
+    
+    $citys  = $mapper->city( array( 'state' => $states[0]->id ) )->fetchAll();
+
+    if ( !$citys ) 
+    {
+        header('HTTP/1.1 404 Not Found');
+    
+        return 'Não encontrado'; 
+    }
+
+    return $citys;
+
+});
+
 $router->get('/protests/*', function ($data) use ($mapper) 
 {
     $data = $_GET;
@@ -82,6 +101,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
     }
 
     return $protesto;
+
 
 });
 
