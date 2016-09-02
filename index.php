@@ -74,6 +74,8 @@ $router->get('/protests/*', function ($data) use ($mapper)
     if( $protests_search->date ) $params_search['date >='] = date('Y-m-d H:i:s', strtotime($protests_search->date));
     if( $protests_search->neighborhood ) $params_search['neighborhood LIKE'] = "%" . $protests_search->neighborhood . "%";
 
+    $params_search['status'] = 1;
+
     $protesto = $mapper->organizer_protest->protests( $params_search )->fetchAll( Sql::orderBy('protests.date')->asc() );
 
     if ( !$protesto ) 
