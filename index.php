@@ -42,7 +42,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
     // Validar com negação se string esta preenchida
     if ( !isset( $data ) || count( $data ) == 0 ) 
     {
-        $protests = $mapper->protests->fetchAll();
+        $protests = $mapper->protests(['status' => 1])->fetchAll();
         
         foreach ( $protests as $protest ) 
         {
