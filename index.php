@@ -54,7 +54,8 @@ $router->get('/protests/*', function ($data) use ($mapper)
         }
 
         header('HTTP/1.1 200 Ok');
-        return json_encode( $return );
+        echo json_encode( $return );
+	exit;
     }
 
     $params_search = array();
@@ -82,7 +83,9 @@ $router->get('/protests/*', function ($data) use ($mapper)
         return 'Não encontrado'; 
     }
 
-    return json_decode($protesto);
+    header('HTTP/1.1 200 Ok'); 
+    echo json_encode($protesto);
+    exit;
 
 });
 
