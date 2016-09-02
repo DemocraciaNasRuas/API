@@ -46,7 +46,7 @@ $router->get('/protests/*', function ($data) use ($mapper)
         
         foreach ( $protests as $protest ) 
         {
-            $organizer_protest = $mapper->organizer_protest( array( 'protests_id' => $protest->id ) )->fetch();
+            $organizer_protest = $mapper->organizer_protest( array( 'protests_id' => $protest->id, 'status' => 1 ) )->fetch();
 
             $protest_organizer = array( 'protests' => $protest, 'organizer' => $organizer_protest );
 
