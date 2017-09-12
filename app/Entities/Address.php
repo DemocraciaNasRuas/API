@@ -15,7 +15,6 @@ class Address extends Model implements Transformable
         'number',
         'district',
         'city_id',
-        'state_id',
         'postcode',
         'latitude',
         'longitude'

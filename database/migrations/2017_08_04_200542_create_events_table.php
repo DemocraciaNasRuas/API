@@ -15,7 +15,13 @@ class CreateEventsTable extends Migration
 	{
 		Schema::create('events', function(Blueprint $table) {
             $table->increments('id');
-
+            $table->integer('user_id')->unsigned()->nullable();
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->integer('address_id')->unsigned()->nullable();
+            $table->foreign('address_id')->references('id')->on('addresses');
+            $table->string('title');
+            $table->text('description');
+            $table->timestamp('date');
             $table->timestamps();
 		});
 	}
