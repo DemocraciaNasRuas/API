@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\EventPut;
+use App\Http\Requests\StatePost;
 use App\Models\State;
 use Illuminate\Http\Request;
+use App\Http\Resources\State as StateResource;
 
 class StatesController extends Controller
 {
@@ -15,62 +18,56 @@ class StatesController extends Controller
      */
     public function index()
     {
-
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        return StateResource::collection(State::paginate(request()->per_page?: 10));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param StatePost $request
+     * @return StateResource
      */
-    public function store(Request $request)
+    public function store(StatePost $request)
     {
-        //
+        try{
+            return StateResource::make(State::create($request->all()));
+        }catch (\Exception $exception){
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 
     /**
      * Display the specified resource.
      *
      * @param  \App\Models\State  $state
-     * @return \Illuminate\Http\Response
+     * @return StateResource
      */
     public function show(State $state)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\State  $state
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(State $state)
-    {
-        //
+        return StateResource::make($state);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\State  $state
-     * @return \Illuminate\Http\Response
+     * @param EventPut $request
+     * @param  \App\Models\State $state
+     * @return StateResource
      */
-    public function update(Request $request, State $state)
+    public function update(EventPut $request, State $state)
     {
-        //
+        try{
+            $state->update($request->all());
+            return StateResource::make($state);
+        }catch (\Exception $exception){
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -81,6 +78,18 @@ class StatesController extends Controller
      */
     public function destroy(State $state)
     {
-        //
+        try {
+            $state->delete();
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Estado deletado com sucesso.'
+            ]);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 }

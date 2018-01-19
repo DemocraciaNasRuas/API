@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AddressPost;
+use App\Http\Requests\AddressPut;
 use App\Models\Address;
-use Illuminate\Http\Request;
+use App\Http\Resources\Address as AddressResource;
 
 class AddressesController extends Controller
 {
@@ -15,62 +17,56 @@ class AddressesController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        return AddressResource::collection(Address::paginate(request()->per_page?: 10));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param AddressPost $request
+     * @return AddressResource
      */
-    public function store(Request $request)
+    public function store(AddressPost $request)
     {
-        //
+        try{
+            return AddressResource::make(Address::create($request->all()));
+        }catch (\Exception $exception){
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 
     /**
      * Display the specified resource.
      *
      * @param  \App\Models\Address  $address
-     * @return \Illuminate\Http\Response
+     * @return AddressResource
      */
     public function show(Address $address)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Address  $address
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Address $address)
-    {
-        //
+        return AddressResource::make($address);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Address  $address
-     * @return \Illuminate\Http\Response
+     * @param AddressPut $request
+     * @param  \App\Models\Address $address
+     * @return AddressResource
      */
-    public function update(Request $request, Address $address)
+    public function update(AddressPut $request, Address $address)
     {
-        //
+        try{
+            $address->update($request->all());
+            return AddressResource::make($address);
+        }catch (\Exception $exception){
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -81,6 +77,18 @@ class AddressesController extends Controller
      */
     public function destroy(Address $address)
     {
-        //
+        try {
+            $address->delete();
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Endereço deletado com sucesso.'
+            ]);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage()
+            ]);
+        }
     }
 }
