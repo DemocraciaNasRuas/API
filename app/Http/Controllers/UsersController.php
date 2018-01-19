@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\City;
+use App\Models\User;
 use Illuminate\Http\Request;
 
-class Cities extends Controller
+class UsersController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -41,10 +41,10 @@ class Cities extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\City  $city
+     * @param  \App\Models\User  $user
      * @return \Illuminate\Http\Response
      */
-    public function show(City $city)
+    public function show(User $user)
     {
         //
     }
@@ -52,10 +52,10 @@ class Cities extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\City  $city
+     * @param  \App\Models\User  $user
      * @return \Illuminate\Http\Response
      */
-    public function edit(City $city)
+    public function edit(User $user)
     {
         //
     }
@@ -64,10 +64,10 @@ class Cities extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\City  $city
+     * @param  \App\Models\User  $user
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, City $city)
+    public function update(Request $request, User $user)
     {
         //
     }
@@ -75,10 +75,10 @@ class Cities extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\City  $city
+     * @param  \App\Models\User  $user
      * @return \Illuminate\Http\Response
      */
-    public function destroy(City $city)
+    public function destroy(User $user)
     {
         //
     }

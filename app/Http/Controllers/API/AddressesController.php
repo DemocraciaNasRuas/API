@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
-use App\Models\Event;
+use App\Http\Controllers\Controller;
+use App\Models\Address;
 use Illuminate\Http\Request;
 
-class Events extends Controller
+class AddressesController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -41,10 +42,10 @@ class Events extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Event  $event
+     * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function show(Event $event)
+    public function show(Address $address)
     {
         //
     }
@@ -52,10 +53,10 @@ class Events extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\Event  $event
+     * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function edit(Event $event)
+    public function edit(Address $address)
     {
         //
     }
@@ -64,10 +65,10 @@ class Events extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Event  $event
+     * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Event $event)
+    public function update(Request $request, Address $address)
     {
         //
     }
@@ -75,10 +76,10 @@ class Events extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Event  $event
+     * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Event $event)
+    public function destroy(Address $address)
     {
         //
     }

@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Models\State;
 use Illuminate\Http\Request;
 
-class States extends Controller
+class StatesController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -14,7 +15,7 @@ class States extends Controller
      */
     public function index()
     {
-        //
+
     }
 
     /**
